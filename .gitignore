@@ -1,0 +1,39 @@
+# STM32CubeIDE 和 ARM GCC 编译生成文件
+
+Debug/
+
+Release/
+
+build/
+
+*.elf
+
+*.bin
+
+*.hex
+
+*.map
+
+*.lst
+
+
+
+
+# IDE 特定文件/文件夹
+
+.settings/
+
+.cproject
+
+.project
+
+*.launch
+
+
+
+
+# 系统文件
+
+.DS_Store
+
+Thumbs.db
