@@ -6,57 +6,63 @@ extern TIM_HandleTypeDef htim3;
 
 extern char message[20];
 
-int KEY_Scan(){
-    static uint32_t last_time = 0;
-    uint32_t current_time = HAL_GetTick();
+// 定义一个全局“信箱”，用于在后台中断和主循环之间传递按键值
+volatile uint8_t global_key_value = 0;
 
-    // 限制扫描频率
-    if(current_time - last_time < 5) return 0;
-    last_time = current_time;
+/* * 后台按键扫描函数 (将在 1ms 中断中自动调用)
+ * 它使用状态机逻辑，完美避开所有阻塞问题
+ */
+void Key_Interrupt_Scan(void) {
+    static uint8_t key_state = 0;
+    static uint16_t delay_count = 0;
+    static uint8_t current_key = 0;
 
-    // 检测按键状态
-    uint8_t current_key = 0;
-    if(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET){
-        current_key = 1;
-    }
-    else if(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET){
-        current_key = 2;
-    }
-    else if(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_RESET){
-        current_key = 3;
-    }
-    else if(HAL_GPIO_ReadPin(KEY4_GPIO_Port, KEY4_Pin) == GPIO_PIN_RESET){
-        current_key = 4;
-    }
+    // 1. 读取当前物理按键状态
+    uint8_t key_read = 0;
+    if(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) key_read = 1;
+    else if(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET) key_read = 2;
+    else if(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_RESET) key_read = 3;
+    else if(HAL_GPIO_ReadPin(KEY4_GPIO_Port, KEY4_Pin) == GPIO_PIN_RESET) key_read = 4;
 
-    // 简单的消抖逻辑
-    static uint32_t press_time = 0;
-    static uint8_t last_key = 0;
+    // 2. 状态机处理
+    switch (key_state) {
+        case 0: // 状态0：空闲，等待按下
+            if (key_read != 0) {
+                current_key = key_read; // 记录是哪个键按下的
+                key_state = 1;          // 进入消抖状态
+                delay_count = 0;
+            }
+            break;
 
-    if(current_key == 0){
-        // 没有按键按下，重置状态
-        last_key = 0;
-        return 0;
-    }
+        case 1: // 状态1：消抖确认
+            if (key_read == current_key) {
+                delay_count++;
+                if (delay_count >= 20) { // 连续 20 毫秒确认按下，消抖成功！
+                    global_key_value = current_key; // 将按键值放入全局“信箱”
+                    key_state = 2;                  // 进入等待松手状态
+                }
+            } else {
+                key_state = 0; // 如果这 20ms 内状态变了，说明是杂波/抖动，复位
+            }
+            break;
 
-    if(current_key != last_key){
-        // 检测到新的按键，开始计时
-        last_key = current_key;
-        press_time = current_time;
-        return 0;  // 第一次检测到，不返回，等待消抖
+        case 2: // 状态2：等待松开 (防止长按导致疯狂触发)
+            if (key_read == 0) {
+                key_state = 0; // 彻底松手了，回到状态0准备下一次按键
+            }
+            break;
     }
-    else{
-        // 同一个按键持续按下
-        if(current_time - press_time > KEY_DEBOUNCE_TIME){
-            // 消抖完成，返回键值
-            last_key = 0;  // 重置，防止重复触发
-            return current_key;
-        }
-    }
-
-    return 0;
 }
 
+/*
+ * 主循环调用的获取按键函数
+ * 只需要看一眼“信箱”里有没有中断扫到的按键即可，极速返回！
+ */
+int KEY_Scan(void){
+    uint8_t temp = global_key_value;
+    global_key_value = 0; // 读取完毕后清空信箱
+    return temp;
+}
 void Limit(uint8_t *value){
 	*value=(*value>200)?0:((*value>100)?100:*value);
 }
