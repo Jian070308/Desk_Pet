@@ -812,11 +812,6 @@ void OLED_Show(){
 	  OLED_ShowFrame();
 }
 
-
-
-
-
-
 uint8_t PET_MAX=100;
 uint8_t PET_MIN=0;
 
@@ -836,85 +831,6 @@ typedef enum {
     DATA_TYPE_FLOAT,
     DATA_TYPE_UINT8
 } DataType;
-
-//void Draw(PetState *state_array, size_t member_offset,uint8_t min,uint8_t max,uint8_t flag,char *str,DataType data_type){
-//	while(1){
-//		if(flag){
-//			AHT20_Read(&now.temperature,&now.humidity);
-//		}
-//
-//	    OLED_NewFrame();
-//
-//	    OLED_DrawLine(0, 55, 128, 55, OLED_COLOR_NORMAL);
-//	    OLED_DrawLine(5, 0, 5, 60, OLED_COLOR_NORMAL);
-//	    OLED_PrintString(85, 10,str , &font16x16,OLED_COLOR_NORMAL);
-//
-//
-//	    int x, y;
-//
-//	    if(full_flag == 1){
-//	        // 数组已满：绘制60个完整数据点
-//	        for(int i = 0; i < 60; i++){
-//	            // 关键修正：根据时间顺序获取对应的happy_store值
-//	            int data_index = (write_index + i) % 60;  // 从最早的数据开始
-//
-//	            //加上位置偏移量得出成员位置
-//	            void *target_addr = (uint8_t*)&state_array[write_index] + member_offset;
-//
-//	            // y坐标：数值映射到屏幕高度
-//	    	    switch(data_type){
-//					case DATA_TYPE_FLOAT:
-//						y = 55.0f - ((((float *)target_addr)[data_index] - min) * 55.0f / (max - min));
-//						break;
-//					case DATA_TYPE_UINT8:
-//						y = 55 - ((((uint8_t *)target_addr)[data_index] - min) * 55 / (max - min));
-//						break;
-//	    	    }
-//
-//	            // x坐标：从左到右连续绘制
-//	            x = i + 16;  // 从x=16开始
-//	            // 绘制像素点
-//	            OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
-//	        }
-//	    } else {
-//	        // 数组未满：只绘制已存储的数据
-//	        for(int i = 0; i < write_index; i++){
-//
-//	        	void *target_addr = (uint8_t*)&state_array[i] + member_offset;
-//
-//	    	    switch(data_type){
-//					case DATA_TYPE_FLOAT:
-//						y = 55.0f - ((((float *)target_addr)[i] - min) * 55.0f / (max - min));
-//						break;
-//					case DATA_TYPE_UINT8:
-//						y = 55 - ((((uint8_t *)target_addr)[i] - min) * 55 / (max - min));
-//						break;
-//	    	    }
-//
-//	            x = i + 16;  // 从x=16开始
-//
-//	            OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
-//	        }
-//	    }
-//
-//	    OLED_ShowFrame();
-//
-//	    if(HAL_GPIO_ReadPin(KEY3_GPIO_Port,KEY3_Pin)==GPIO_PIN_RESET){
-//	    	HAL_Delay(50);
-//	    	if(HAL_GPIO_ReadPin(KEY3_GPIO_Port,KEY3_Pin)==GPIO_PIN_RESET){
-//	    		return;
-//	    	}
-//	    }
-//	}
-//}
-//
-//void Data_curve(){
-//	Draw(history,offsetof(PetState,happy),PET_MIN,PET_MAX,0,str1,DATA_TYPE_UINT8);
-//	Draw(history,offsetof(PetState,hungry),PET_MIN,PET_MAX,0,str2,DATA_TYPE_UINT8);
-//	Draw(history,offsetof(PetState,tired),PET_MIN,PET_MAX,0,str3,DATA_TYPE_UINT8);
-//	Draw(history,offsetof(PetState,temperature),TEMP_MIN,TEMP_MAX,1,str4,DATA_TYPE_FLOAT);
-//	Draw(history,offsetof(PetState,humidity),HUMID_MIN,HUMID_MAX,1,str5,DATA_TYPE_FLOAT);
-//}
 
 
 void Draw(PetState *state_array, size_t member_offset, uint8_t min, uint8_t max, char *str, DataType data_type){

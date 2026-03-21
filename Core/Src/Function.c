@@ -34,9 +34,9 @@ void function(){
 			tx_data[1]=now.hungry;
 			tx_data[2]=now.tired;
 			EEPROM_PageWrite(&hi2c1,ADDRESS_Write,ADDRESS_Start,tx_data,3);
+			HAL_Delay(5);
 			tx_flag=0;
 			timer_save=0;
-	        // 注意：这里后续我们还要修复 EEPROM 连续写入的 Bug
 		    uint8_t buffer[1];
 		    buffer[0]=INITIALIZED_FLAG;
 	    	EEPROM_PageWrite(&hi2c1,ADDRESS_Write,FIRST_BOOT_FLAG_ADDR, buffer,1);
