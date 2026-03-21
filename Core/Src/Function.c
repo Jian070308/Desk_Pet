@@ -7,6 +7,8 @@ uint8_t buf4[20];
 uint8_t buf5[20];
 uint8_t tx_data[5];
 
+static int once_ble = 0;		// 防止返回多条消息
+
 void function(){
     // 1. 在进入循环前，定义两个局部变量记录时间戳
     uint32_t aht20_func_last_time = HAL_GetTick();
@@ -41,6 +43,16 @@ void function(){
 		    buffer[0]=INITIALIZED_FLAG;
 	    	EEPROM_PageWrite(&hi2c1,ADDRESS_Write,FIRST_BOOT_FLAG_ADDR, buffer,1);
 		}
+
+		static uint32_t last_ble_time = 0;
+		uint32_t current_time_ble = HAL_GetTick();
+
+		// 蓝牙指令“消抖”与“防连发”
+		if (current_time_ble - last_ble_time < 500 && once_ble == 0) {
+		   ble_flag = 0;
+		   once_ble = 1;
+		}
+		last_ble_time = current_time;
 
 		switch(ble_flag){
 			case '1':

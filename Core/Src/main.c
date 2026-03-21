@@ -121,7 +121,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	if(huart==&huart3){
-		ble_flag=ble_data[0];
+		if(ble_data[0] >= '1' && ble_data[0] <= '5'){
+				    ble_flag = ble_data[0];
+		}
+
 		HAL_UART_Receive_IT(&huart3, ble_data, 1);
 	}
 }
@@ -163,10 +166,6 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   Project_Init();
-//  __HAL_TIM_SET_AUTORELOAD(&htim3,3000);
-//  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,3000/5);
-//  HAL_Delay(200);
-//  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -198,6 +197,7 @@ int main(void)
 			  Data_curve();
 			  break;
 	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
