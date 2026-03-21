@@ -80,6 +80,6 @@ void function(){
 			  return;
 		}
 
-		HAL_Delay(50);
+		HAL_Delay(10);
 	}
 }

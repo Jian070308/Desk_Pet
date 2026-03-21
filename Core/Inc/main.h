@@ -84,6 +84,8 @@ void Mode(uint8_t *state,Time_Mode mode);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define LED_Pin GPIO_PIN_13
+#define LED_GPIO_Port GPIOC
 #define KEY1_Pin GPIO_PIN_10
 #define KEY1_GPIO_Port GPIOA
 #define KEY2_Pin GPIO_PIN_11

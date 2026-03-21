@@ -36,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define TEST 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,6 +65,9 @@ volatile uint8_t ble_flag=0;
 volatile uint8_t write_index=0;
 volatile uint8_t full_flag=0;
 volatile uint8_t tx_flag=0;
+
+uint32_t aht20_last_time = 0;
+uint32_t oled_last_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,6 +78,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#if TEST
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim==&htim2){
 		timer_save++;
@@ -116,6 +120,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		HAL_UART_Receive_IT(&huart3, ble_data, 1);
 	}
 }
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -154,32 +159,40 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   Project_Init();
+  __HAL_TIM_SET_AUTORELOAD(&htim3,3000);
+  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,3000/5);
+  HAL_Delay(200);
+  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  OLED_Mode();
-	  AHT20_Read(&now.temperature,&now.humidity);
-	  key_state=KEY_Scan();
-	  switch(key_state){
-	  	  case 1:
-	  		  Mode(&time_state,normal);
-	  		  break;
-	  	  case 2:
-	  		  Mode(&time_state,fast);
-	  		  break;
-	  	  case 3:
-	  		  Data_curve();
-	  		  break;
+	  uint32_t current_time = HAL_GetTick();
+
+	  if(current_time - oled_last_time >= 50) {
+	     OLED_Mode();
+	     oled_last_time = current_time;
 	  }
 
+	  if(current_time - aht20_last_time >= 500) {
+	     AHT20_Read(&now.temperature, &now.humidity);
+	     aht20_last_time = current_time;
+	  }
 
-
-
-
-
+	 key_state = KEY_Scan();
+	 switch(key_state){
+	    case 1:
+	    	Mode(&time_state, normal);
+	        break;
+	    case 2:
+	        Mode(&time_state, fast);
+	        break;
+	    case 3:
+	        Data_curve();
+	        break;
+	 }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
