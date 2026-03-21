@@ -8,9 +8,26 @@ uint8_t buf5[20];
 uint8_t tx_data[5];
 
 void function(){
+    // 1. 在进入循环前，定义两个局部变量记录时间戳
+    uint32_t aht20_func_last_time = HAL_GetTick();
+    uint32_t oled_func_last_time = HAL_GetTick();
+
 	while(1){
-		AHT20_Read(&now.temperature,&now.humidity);
-		OLED_Show();
+        // 2. 获取当前系统运行时间
+        uint32_t current_time = HAL_GetTick();
+
+        // 3. 每 500 毫秒读取一次温湿度
+        if(current_time - aht20_func_last_time >= 500) {
+            AHT20_Read(&now.temperature, &now.humidity);
+            aht20_func_last_time = current_time;
+        }
+
+        // 4. 每 50 毫秒刷新一次 OLED（频率可以自己微调）
+        if(current_time - oled_func_last_time >= 50) {
+            OLED_Show();
+            oled_func_last_time = current_time;
+        }
+
 
 		if(tx_flag){
 			tx_data[0]=now.happy;
@@ -19,7 +36,7 @@ void function(){
 			EEPROM_PageWrite(&hi2c1,ADDRESS_Write,ADDRESS_Start,tx_data,3);
 			tx_flag=0;
 			timer_save=0;
-	        // 成功存储数据后，立即写入已初始化标志，防止下次再被判断为首次
+	        // 注意：这里后续我们还要修复 EEPROM 连续写入的 Bug
 		    uint8_t buffer[1];
 		    buffer[0]=INITIALIZED_FLAG;
 	    	EEPROM_PageWrite(&hi2c1,ADDRESS_Write,FIRST_BOOT_FLAG_ADDR, buffer,1);
@@ -80,6 +97,6 @@ void function(){
 			  return;
 		}
 
-		HAL_Delay(10);
+		HAL_Delay(10); // 保留一个非常短的延时，防止while(1)跑得太死，让出一点点CPU切片
 	}
 }

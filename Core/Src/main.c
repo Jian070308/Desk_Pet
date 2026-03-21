@@ -78,7 +78,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#if TEST
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim==&htim2){
 		timer_save++;
@@ -95,15 +94,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		if(time_state==0){
 			timer++;
 			if(timer==30){
-			now.happy-=1;
-			now.hungry+=1;
-			now.tired+=1;
+			now.happy -= 1;
+			Limit(&now.happy);  // 防止变成255
+			now.hungry += 1;
+			Limit(&now.hungry);
+			now.tired += 1;
+			Limit(&now.tired);
 			timer=0;
 			}
 		}else{
 			now.happy-=1;
+			Limit(&now.happy);
 			now.hungry+=1;
+			Limit(&now.hungry);
 			now.tired+=1;
+			Limit(&now.tired);
 		}
 
 		if(timer_save==60){
@@ -120,7 +125,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		HAL_UART_Receive_IT(&huart3, ble_data, 1);
 	}
 }
-#endif
 /* USER CODE END 0 */
 
 /**
@@ -159,10 +163,10 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   Project_Init();
-  __HAL_TIM_SET_AUTORELOAD(&htim3,3000);
-  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,3000/5);
-  HAL_Delay(200);
-  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,0);
+//  __HAL_TIM_SET_AUTORELOAD(&htim3,3000);
+//  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,3000/5);
+//  HAL_Delay(200);
+//  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,28 +175,29 @@ int main(void)
   {
 	  uint32_t current_time = HAL_GetTick();
 
+
 	  if(current_time - oled_last_time >= 50) {
-	     OLED_Mode();
-	     oled_last_time = current_time;
+		  OLED_Mode();
+		  oled_last_time = current_time;
 	  }
 
 	  if(current_time - aht20_last_time >= 500) {
-	     AHT20_Read(&now.temperature, &now.humidity);
-	     aht20_last_time = current_time;
+		  AHT20_Read(&now.temperature, &now.humidity);
+		  aht20_last_time = current_time;
 	  }
 
-	 key_state = KEY_Scan();
-	 switch(key_state){
-	    case 1:
-	    	Mode(&time_state, normal);
-	        break;
-	    case 2:
-	        Mode(&time_state, fast);
-	        break;
-	    case 3:
-	        Data_curve();
-	        break;
-	 }
+	  key_state = KEY_Scan();
+	  switch(key_state){
+		  case 1:
+			  Mode(&time_state, normal);
+			  break;
+		  case 2:
+			  Mode(&time_state, fast);
+			  break;
+		  case 3:
+			  Data_curve();
+			  break;
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

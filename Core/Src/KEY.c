@@ -63,6 +63,7 @@ int KEY_Scan(void){
     global_key_value = 0; // 读取完毕后清空信箱
     return temp;
 }
+
 void Limit(uint8_t *value){
 	*value=(*value>200)?0:((*value>100)?100:*value);
 }

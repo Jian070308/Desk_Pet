@@ -837,82 +837,164 @@ typedef enum {
     DATA_TYPE_UINT8
 } DataType;
 
-void Draw(PetState *state_array, size_t member_offset,uint8_t min,uint8_t max,uint8_t flag,char *str,DataType data_type){
-	while(1){
-		if(flag){
-			AHT20_Read(&now.temperature,&now.humidity);
-		}
+//void Draw(PetState *state_array, size_t member_offset,uint8_t min,uint8_t max,uint8_t flag,char *str,DataType data_type){
+//	while(1){
+//		if(flag){
+//			AHT20_Read(&now.temperature,&now.humidity);
+//		}
+//
+//	    OLED_NewFrame();
+//
+//	    OLED_DrawLine(0, 55, 128, 55, OLED_COLOR_NORMAL);
+//	    OLED_DrawLine(5, 0, 5, 60, OLED_COLOR_NORMAL);
+//	    OLED_PrintString(85, 10,str , &font16x16,OLED_COLOR_NORMAL);
+//
+//
+//	    int x, y;
+//
+//	    if(full_flag == 1){
+//	        // 数组已满：绘制60个完整数据点
+//	        for(int i = 0; i < 60; i++){
+//	            // 关键修正：根据时间顺序获取对应的happy_store值
+//	            int data_index = (write_index + i) % 60;  // 从最早的数据开始
+//
+//	            //加上位置偏移量得出成员位置
+//	            void *target_addr = (uint8_t*)&state_array[write_index] + member_offset;
+//
+//	            // y坐标：数值映射到屏幕高度
+//	    	    switch(data_type){
+//					case DATA_TYPE_FLOAT:
+//						y = 55.0f - ((((float *)target_addr)[data_index] - min) * 55.0f / (max - min));
+//						break;
+//					case DATA_TYPE_UINT8:
+//						y = 55 - ((((uint8_t *)target_addr)[data_index] - min) * 55 / (max - min));
+//						break;
+//	    	    }
+//
+//	            // x坐标：从左到右连续绘制
+//	            x = i + 16;  // 从x=16开始
+//	            // 绘制像素点
+//	            OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
+//	        }
+//	    } else {
+//	        // 数组未满：只绘制已存储的数据
+//	        for(int i = 0; i < write_index; i++){
+//
+//	        	void *target_addr = (uint8_t*)&state_array[i] + member_offset;
+//
+//	    	    switch(data_type){
+//					case DATA_TYPE_FLOAT:
+//						y = 55.0f - ((((float *)target_addr)[i] - min) * 55.0f / (max - min));
+//						break;
+//					case DATA_TYPE_UINT8:
+//						y = 55 - ((((uint8_t *)target_addr)[i] - min) * 55 / (max - min));
+//						break;
+//	    	    }
+//
+//	            x = i + 16;  // 从x=16开始
+//
+//	            OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
+//	        }
+//	    }
+//
+//	    OLED_ShowFrame();
+//
+//	    if(HAL_GPIO_ReadPin(KEY3_GPIO_Port,KEY3_Pin)==GPIO_PIN_RESET){
+//	    	HAL_Delay(50);
+//	    	if(HAL_GPIO_ReadPin(KEY3_GPIO_Port,KEY3_Pin)==GPIO_PIN_RESET){
+//	    		return;
+//	    	}
+//	    }
+//	}
+//}
+//
+//void Data_curve(){
+//	Draw(history,offsetof(PetState,happy),PET_MIN,PET_MAX,0,str1,DATA_TYPE_UINT8);
+//	Draw(history,offsetof(PetState,hungry),PET_MIN,PET_MAX,0,str2,DATA_TYPE_UINT8);
+//	Draw(history,offsetof(PetState,tired),PET_MIN,PET_MAX,0,str3,DATA_TYPE_UINT8);
+//	Draw(history,offsetof(PetState,temperature),TEMP_MIN,TEMP_MAX,1,str4,DATA_TYPE_FLOAT);
+//	Draw(history,offsetof(PetState,humidity),HUMID_MIN,HUMID_MAX,1,str5,DATA_TYPE_FLOAT);
+//}
 
-	    OLED_NewFrame();
 
-	    OLED_DrawLine(0, 55, 128, 55, OLED_COLOR_NORMAL);
-	    OLED_DrawLine(5, 0, 5, 60, OLED_COLOR_NORMAL);
-	    OLED_PrintString(85, 10,str , &font16x16,OLED_COLOR_NORMAL);
+void Draw(PetState *state_array, size_t member_offset, uint8_t min, uint8_t max, char *str, DataType data_type){
+    OLED_NewFrame();
+    OLED_DrawLine(0, 55, 128, 55, OLED_COLOR_NORMAL);
+    OLED_DrawLine(5, 0, 5, 60, OLED_COLOR_NORMAL);
+    OLED_PrintString(85, 10, str, &font16x16, OLED_COLOR_NORMAL);
 
+    // 根据数组是否存满，决定我们要画多少个点
+    int count = (full_flag == 1) ? 60 : write_index;
 
-	    int x, y;
+    for(int i = 0; i < count; i++){
+        // 算出在历史数组中的真实索引
+        int data_index = (full_flag == 1) ? ((write_index + i) % 60) : i;
 
-	    if(full_flag == 1){
-	        // 数组已满：绘制60个完整数据点
-	        for(int i = 0; i < 60; i++){
-	            // 关键修正：根据时间顺序获取对应的happy_store值
-	            int data_index = (write_index + i) % 60;  // 从最早的数据开始
+        // 【关键修复】：先定位到具体的结构体，再偏移找到对应成员
+        void *target_addr = (uint8_t*)&state_array[data_index] + member_offset;
 
-	            //加上位置偏移量得出成员位置
-	            void *target_addr = (uint8_t*)&state_array[write_index] + member_offset;
+        int x, y;
+        float val = 0; // 为了方便计算，把整型和浮点型都先转成 float 暂存
 
-	            // y坐标：数值映射到屏幕高度
-	    	    switch(data_type){
-					case DATA_TYPE_FLOAT:
-						y = 55.0f - ((((float *)target_addr)[data_index] - min) * 55.0f / (max - min));
-						break;
-					case DATA_TYPE_UINT8:
-						y = 55 - ((((uint8_t *)target_addr)[data_index] - min) * 55 / (max - min));
-						break;
-	    	    }
+        if(data_type == DATA_TYPE_FLOAT){
+            val = *(float *)target_addr;
+        } else if(data_type == DATA_TYPE_UINT8){
+            val = (float)(*(uint8_t *)target_addr);
+        }
 
-	            // x坐标：从左到右连续绘制
-	            x = i + 16;  // 从x=16开始
-	            // 绘制像素点
-	            OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
-	        }
-	    } else {
-	        // 数组未满：只绘制已存储的数据
-	        for(int i = 0; i < write_index; i++){
+        // 统一计算 Y 坐标
+        y = 55 - (int)((val - (float)min) * 55.0f / ((float)max - (float)min));
+        // X 坐标向右推进
+        x = i + 16;
 
-	        	void *target_addr = (uint8_t*)&state_array[i] + member_offset;
-
-	    	    switch(data_type){
-					case DATA_TYPE_FLOAT:
-						y = 55.0f - ((((float *)target_addr)[i] - min) * 55.0f / (max - min));
-						break;
-					case DATA_TYPE_UINT8:
-						y = 55 - ((((uint8_t *)target_addr)[i] - min) * 55 / (max - min));
-						break;
-	    	    }
-
-	            x = i + 16;  // 从x=16开始
-
-	            OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
-	        }
-	    }
-
-	    OLED_ShowFrame();
-
-	    if(HAL_GPIO_ReadPin(KEY3_GPIO_Port,KEY3_Pin)==GPIO_PIN_RESET){
-	    	HAL_Delay(50);
-	    	if(HAL_GPIO_ReadPin(KEY3_GPIO_Port,KEY3_Pin)==GPIO_PIN_RESET){
-	    		return;
-	    	}
-	    }
-	}
+        OLED_SetPixel(x, y, OLED_COLOR_NORMAL);
+    }
+    OLED_ShowFrame();
 }
 
+// ----------------------------------------------------
+// 修正后的 Data_curve：使用非阻塞时间戳 + 页面状态机
+// ----------------------------------------------------
 void Data_curve(){
-	Draw(history,offsetof(PetState,happy),PET_MIN,PET_MAX,0,str1,DATA_TYPE_UINT8);
-	Draw(history,offsetof(PetState,hungry),PET_MIN,PET_MAX,0,str2,DATA_TYPE_UINT8);
-	Draw(history,offsetof(PetState,tired),PET_MIN,PET_MAX,0,str3,DATA_TYPE_UINT8);
-	Draw(history,offsetof(PetState,temperature),TEMP_MIN,TEMP_MAX,1,str4,DATA_TYPE_FLOAT);
-	Draw(history,offsetof(PetState,humidity),HUMID_MIN,HUMID_MAX,1,str5,DATA_TYPE_FLOAT);
-}
+    uint8_t page = 0;
+    uint32_t aht20_curve_last_time = HAL_GetTick();
+    uint32_t oled_curve_last_time = HAL_GetTick();
 
+    // 刚进入曲线模式时，清空一下可能残留的按键信箱，防止误触发
+    KEY_Scan();
+
+    while(1){
+        uint32_t current_time = HAL_GetTick();
+
+        // 1. 如果在温湿度页面，每 500ms 刷新一次 AHT20
+        if(page >= 3 && (current_time - aht20_curve_last_time >= 500)) {
+            AHT20_Read(&now.temperature, &now.humidity);
+            aht20_curve_last_time = current_time;
+        }
+
+        // 2. 每 50 毫秒刷新一次屏幕画面
+        if(current_time - oled_curve_last_time >= 50) {
+            switch(page){
+                case 0: Draw(history, offsetof(PetState,happy), PET_MIN, PET_MAX, str1, DATA_TYPE_UINT8); break;
+                case 1: Draw(history, offsetof(PetState,hungry), PET_MIN, PET_MAX, str2, DATA_TYPE_UINT8); break;
+                case 2: Draw(history, offsetof(PetState,tired), PET_MIN, PET_MAX, str3, DATA_TYPE_UINT8); break;
+                case 3: Draw(history, offsetof(PetState,temperature), TEMP_MIN, TEMP_MAX, str4, DATA_TYPE_FLOAT); break;
+                case 4: Draw(history, offsetof(PetState,humidity), HUMID_MIN, HUMID_MAX, str5, DATA_TYPE_FLOAT); break;
+            }
+            oled_curve_last_time = current_time;
+        }
+
+        // 3. 干净利落的按键控制逻辑
+        int key = KEY_Scan(); // 使用你写的优秀消抖函数
+        if(key == 3) {
+            page++; // 翻到下一页
+            if(page > 4) {
+                return; // 如果已经是最后一页，安全返回 main()，彻底退出！
+            }
+        } else if(key == 4) {
+            return; // 随时按下 Key4 强制退出
+        }
+
+        HAL_Delay(10); // 稍微出让一点 CPU 资源
+    }
+}
